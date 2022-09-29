@@ -104,102 +104,109 @@ picture_number_list, rgb_extraction, rgb_code_list, lab_code, skin_tone_list, hs
 person_rgb, person_rgb_r, person_rgb_g, person_rgb_b, person_rgb_list = [], [], [], [], []
 
 
-for i in range(0,50):
+for i in range(0,300):
+
+    try:
+        picture_number = i
+        picture_number_list.append(picture_number)
+        image_file = 'kaggle/1 ('+ str(picture_number) +').jpg' #-- 자신의 개발 환경에 맞게 변경할 것
+
+        image = cv2.imread(image_file)
+        # cv2.imshow("Face Landmark", image)
+        # cv2.waitKey(0)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # cv2.imshow("Face Landmark", gray)
+        # cv2.waitKey(0)
+
+        FaceDetector = dlib.get_frontal_face_detector()
+        predictor = dlib.shape_predictor("./shape_predictor_68_face_landmarks.dat")
+        faces = FaceDetector(gray)
 
 
-    picture_number = i
-    picture_number_list.append(picture_number)
-    image_file = 'kaggle/1 ('+ str(picture_number) +').jpg' #-- 자신의 개발 환경에 맞게 변경할 것
+        for face in faces:
+              x1, y1, x2, y2 = face.left(), face.top(), face.right(), face.bottom()
+              cv2.rectangle(image, pt1=(x1, y1), pt2=(x2, y2),
+                            color=(0, 255, 0), thickness=2)
+              img = image[y1:y2, x1:x2]
 
-    image = cv2.imread(image_file)
-    # cv2.imshow("Face Landmark", image)
-    # cv2.waitKey(0)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # cv2.imshow("Face Landmark", gray)
-    # cv2.waitKey(0)
+        # cv2.imshow("Face Landmark", img)
+        # cv2.waitKey(0)
 
-    FaceDetector = dlib.get_frontal_face_detector()
-    predictor = dlib.shape_predictor("./shape_predictor_68_face_landmarks.dat")
-    faces = FaceDetector(gray)
+        cv2.imwrite('./img/' + str(picture_number) + '_1.jpg', img)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+        # cv2.imshow("Face Landmark", gray)
+        # cv2.waitKey(0)
 
-    for face in faces:
-          x1, y1, x2, y2 = face.left(), face.top(), face.right(), face.bottom()
-          cv2.rectangle(image, pt1=(x1, y1), pt2=(x2, y2),
-                        color=(0, 255, 0), thickness=2)
-          img = image[y1:y2, x1:x2]
+        faces = FaceDetector(gray)
+        h, w, c = img.shape
+        # cv2.imshow("Face Landmark", img)
+        # cv2.waitKey(0)
+        circle_size = (h + w) // 40
 
-    # cv2.imshow("Face Landmark", img)
-    # cv2.waitKey(0)
+        for face in faces:
+              shape = predictor(gray, face)
+              for n in range(0, 68):
+                  x = shape.part(n).x
+                  y = shape.part(n).y
+                  cv2.circle(img, (x, y), circle_size, (0, 0, 0), -1)
 
-    cv2.imwrite('./img/' + str(picture_number) + '_1.jpg', img)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # cv2.imshow("Face Landmark", img)
+        # cv2.waitKey(0)
 
-    # cv2.imshow("Face Landmark", gray)
-    # cv2.waitKey(0)
-
-    faces = FaceDetector(gray)
-    h, w, c = img.shape
-    # cv2.imshow("Face Landmark", img)
-    # cv2.waitKey(0)
-    circle_size = (h + w) // 40
-
-    for face in faces:
-          shape = predictor(gray, face)
-          for n in range(0, 68):
-              x = shape.part(n).x
-              y = shape.part(n).y
-              cv2.circle(img, (x, y), circle_size, (0, 0, 0), -1)
-
-    # cv2.imshow("Face Landmark", img)
-    # cv2.waitKey(0)
-
-    face_img_ycrcb = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
-    cv2.imwrite('./img/' + str(picture_number) + '_2.jpg', img)
-    lower = np.array([30,133,77], dtype = np.uint8)
-    upper = np.array([255,173,127], dtype = np.uint8)
-    skin_msk = cv2.inRange(face_img_ycrcb, lower, upper)
-    skin = cv2.bitwise_and(img, img, mask = skin_msk)
+        face_img_ycrcb = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
+        cv2.imwrite('./img/' + str(picture_number) + '_2.jpg', img)
+        lower = np.array([30,133,77], dtype = np.uint8)
+        upper = np.array([255,173,127], dtype = np.uint8)
+        skin_msk = cv2.inRange(face_img_ycrcb, lower, upper)
+        skin = cv2.bitwise_and(img, img, mask = skin_msk)
 
 
-    # cv2.imshow("Face Landmark", skin)
-    # cv2.waitKey(0)
+        # cv2.imshow("Face Landmark", skin)
+        # cv2.waitKey(0)
 
-    cv2.imwrite('./img/' + str(picture_number) + '_3.jpg', skin)
-    image = cv2.cvtColor(skin, cv2.COLOR_BGR2RGB)
-    # cv2.imshow("rgb로 바꿈", image)
-    # cv2.waitKey(0)
-    cv2.imwrite('./img/' + str(picture_number) + '_4.jpg', image)
-    image = image.reshape((image.shape[0] * image.shape[1], 3)) # height, width 통합
+        cv2.imwrite('./img/' + str(picture_number) + '_3.jpg', skin)
+        image = cv2.cvtColor(skin, cv2.COLOR_BGR2RGB)
+        # cv2.imshow("rgb로 바꿈", image)
+        # cv2.waitKey(0)
+        cv2.imwrite('./img/' + str(picture_number) + '_4.jpg', image)
+        image = image.reshape((image.shape[0] * image.shape[1], 3)) # height, width 통합
 
 
 
-    k = 2
-    clt = KMeans(n_clusters = k)
-    clt.fit(image)
+        k = 2
+        clt = KMeans(n_clusters = k)
+        clt.fit(image)
 
-    rgb_list = clt.cluster_centers_
+        rgb_list = clt.cluster_centers_
 
-    last_value = None
-    overlap_count = 0
-    # flag = 0
-    count = 0
-    for center in clt.cluster_centers_:
-        print(center)
-        count += 1
+        last_value = None
+        overlap_count = 0
+        # flag = 0
+        count = 0
+        for center in clt.cluster_centers_:
+            print(center)
+            count += 1
+            person_rgb.append(center)
+            rgb = person_rgb[-1]
+            if count > 1:
+                picture_number_list.append(picture_number)
+            wr.writerow([picture_number, rgb[0], rgb[1], rgb[2]])
+            print(picture_number)
+            print(rgb[0])
+            print(rgb[1])
+            print(rgb[2])
+        if count == 0:
+            del picture_number_list[-1]
 
-        person_rgb.append(center)
-        if count > 1:
-            picture_number_list.append(picture_number)
-    if count == 0:
+
+        print(picture_number_list)
+        print(person_rgb)
+    except:
+        print("앙 오류띠")
         del picture_number_list[-1]
-
-
-
     print(len(picture_number_list))
     print(len(person_rgb))
-    print(picture_number_list)
-    print(person_rgb)
 
 
 
