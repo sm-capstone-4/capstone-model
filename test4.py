@@ -102,9 +102,10 @@ predictor_file = '../컴퓨터비전/SMU-2022-2-Computer-Vision_Code/03_videos_a
 
 picture_number_list, rgb_extraction, rgb_code_list, lab_code, skin_tone_list, hsv_list, vbs_list, real_rgb_code_list, vbs_skin_tone, rgb_overlap, black_rgb = [], [], [], [], [], [], [], [], [], [], []
 person_rgb, person_rgb_r, person_rgb_g, person_rgb_b, person_rgb_list = [], [], [], [], []
+lab_l_list, lab_a_list, lab_b_list, hsv_h_list, hsv_s_list, hsv_v_list = [],[],[],[],[],[]
 
 
-for i in range(0,300):
+for i in range(0,50):
 
     try:
         picture_number = i
@@ -189,6 +190,9 @@ for i in range(0,300):
             count += 1
             person_rgb.append(center)
             rgb = person_rgb[-1]
+            lab_code.append(rgb2lab(rgb))
+            hsv_list.append(colorsys.rgb_to_hsv(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255))
+            vbs_list.append([lab_code[-1][0], lab_code[-1][2], hsv_list[-1][1]])
             if count > 1:
                 picture_number_list.append(picture_number)
             wr.writerow([picture_number, rgb[0], rgb[1], rgb[2]])
@@ -196,6 +200,16 @@ for i in range(0,300):
             print(rgb[0])
             print(rgb[1])
             print(rgb[2])
+            print(lab_code[-1][0])
+            print(lab_code[-1][1])
+            print(lab_code[-1][2])
+            print(hsv_list[-1][0])
+            print(hsv_list[-1][1])
+            print(hsv_list[-1][2])
+            print(vbs_list[-1][0])
+            print(vbs_list[-1][1])
+            print(vbs_list[-1][2])
+
         if count == 0:
             del picture_number_list[-1]
 
@@ -207,6 +221,9 @@ for i in range(0,300):
         del picture_number_list[-1]
     print(len(picture_number_list))
     print(len(person_rgb))
+    print(len(lab_code))
+    print(len(hsv_list))
+    print(len(vbs_list))
 
 
 
@@ -225,6 +242,26 @@ for color_code in person_rgb_list:
         person_rgb_g.append(color_code[1])
         person_rgb_b.append(color_code[2])
 
+for color_code in lab_code:
+    if color_code is None:
+        lab_l_list.append(None)
+        lab_a_list.append(None)
+        lab_b_list.append(None)
+    else:
+        lab_l_list.append(color_code[0])
+        lab_a_list.append(color_code[1])
+        lab_b_list.append(color_code[2])
+
+for color_code in hsv_list:
+    if color_code is None:
+        hsv_h_list.append(None)
+        hsv_s_list.append(None)
+        hsv_v_list.append(None)
+    else:
+        hsv_h_list.append(color_code[0])
+        hsv_s_list.append(color_code[1])
+        hsv_v_list.append(color_code[2])
+
 
 
 df = pd.DataFrame({
@@ -232,8 +269,17 @@ df = pd.DataFrame({
     "rgb_r" : person_rgb_r,
     "rgb_g" : person_rgb_g,
     "rgb_b" : person_rgb_b,
-
+    "lab_l" : lab_l_list,
+    "lab_a" : lab_a_list,
+    "lab_b" : lab_b_list,
+    "hsv_h" : hsv_h_list,
+    "hsv_s" : hsv_s_list,
+    "hsv_v" : hsv_v_list,
+    "vbs_v" : lab_l_list,
+    "vbs_b" : lab_b_list,
+    "vbs_s" : hsv_s_list,
 })
+
 
 
 
