@@ -105,14 +105,16 @@ wr = csv.writer(f)
 picture_number_list, rgb_extraction, rgb_code_list, lab_code, skin_tone_list, hsv_list, vbs_list, real_rgb_code_list, vbs_skin_tone, rgb_overlap = [], [], [], [], [], [], [], [], [], []
 
 
-for i in range(0,1):
 
-    picture_number = i
+def get_data():
+    picture_number = 0
     picture_number_list.append(picture_number)
     # image_file = 'kaggle/1 ('+ str(picture_number) +').jpg' #-- 자신의 개발 환경에 맞게 변경할 것
-    image_file = './myeong_su.jpg'
+    image_file = 'skin_test/12.jpg'
     # 이미지 읽어오기
     image = cv2.imread(image_file)
+
+
 
     # 읽어온 이미지 show
     # cv2.imshow("read iamge", image)
@@ -126,12 +128,18 @@ for i in range(0,1):
     # cv2.imshow("Bgr -> Gray", gray)
     # cv2.waitKey(0)
 
+
+
     # 면상 인식 모델 가져오기
     FaceDetector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor("./shape_predictor_68_face_landmarks.dat")
 
+
+
     # 가져온 모델에 gray 색체계로 만들 image 삽입
     faces = FaceDetector(gray)
+
+
 
     # 얼굴 인식
     for face in faces:
@@ -145,26 +153,40 @@ for i in range(0,1):
         # 사각형으로 그린부분 잘라서 img 변수에 저장
         img = image[y1:y2, x1:x2]
 
+
+
     # 사각형으로 자른 얼굴 show
     # cv2.imshow("face recognization and save", img)
     # cv2.waitKey(0)
 
+
+
     # img 폴터에 이미지이름_1.jpg 형식으로 저장
     cv2.imwrite('./img/' + str(picture_number) + '_1.jpg', img)
+
+
 
     # 얼굴 인식해서 잘라 저장한 img를 BGR -> Gray 로 색체계 변경
     # gray 변수에 저장
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+
+
     # gray 저장한거 show
     # cv2.imshow("Face Landmark", gray)
     # cv2.waitKey(0)
 
+
+
     # 다시 얼굴 넣기
     faces = FaceDetector(gray)
 
+
+
     # height, width, channel 변수에 저장
     h, w, c = img.shape
+
+
 
     # height, width, channel 크기에 따라
     # 적당한 크기의 써클을 그리기 위해
@@ -172,6 +194,8 @@ for i in range(0,1):
     # 40으로 나눔
     # 그래서 circle size를 설정함
     circle_size = (h + w) // 30
+
+
 
     # 이제 68개의 점을 그릴건데
     # 위에서 구한 circle_size로 그릴거임
@@ -182,17 +206,25 @@ for i in range(0,1):
               y = shape.part(n).y
               cv2.circle(img, (x, y), circle_size, (0, 0, 0), -1)
 
+
+
     # 짠 다 그려서 한번 보자
     # cv2.imshow("draw circle", img)
     # cv2.waitKey(0)
 
+
+
     # 그리고 이미지번호_2.jpg로 저장해줌
     cv2.imwrite('./img/' + str(picture_number) + '_2.jpg', img)
+
+
 
     # YCrCb 색체계의 사람 피부색 범위를 알기 때문에
     # 일단 위에서 원까지 다그린 img 이미지를 YCrCb로 바꿔줌
     # 그걸 face_img_ycrcb에 저장
     face_img_ycrcb = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
+
+
 
     # 그래서 ycrcb 사람 피부색 범위가 (00, 133, 77) ~ (255, 173, 127)이 범위래
     # 근데 첫번째 00~255은 그냥 30 ~ 255로 내가 바꿈
@@ -203,36 +235,53 @@ for i in range(0,1):
     lower = np.array([30,133,77], dtype = np.uint8)
     upper = np.array([255,173,127], dtype = np.uint8)
 
+
+
     # 그리고 위에 face_img_ycrcb 저장한거에
     # inRange 함수써서 mask 엎어버리고
     skin_msk = cv2.inRange(face_img_ycrcb, lower, upper)
 
 
+
     # 이걸 기존 이미지에 마스크 해줌
     skin = cv2.bitwise_and(img, img, mask = skin_msk)
+
+
 
     # 그리고 보면 이렇게 보일 거임
     # 피부색 범위가 아닌 요소는 검은색으로 덮어 버린거
     # cv2.imshow("skin_msk", skin)
     # cv2.waitKey(0)
 
+
+
     # 그리고 저장해줌 이름_3.jpg 확인해보셈
     cv2.imwrite('./img/' + str(picture_number) + '_3.jpg', skin)
+
+
 
     # 그리고 이제 RGB 값을 추출할거라]
     # BGR -> RGB로 바꿔줌
     image = cv2.cvtColor(skin, cv2.COLOR_BGR2RGB)
 
+
+
     # 그리고 저장하면 바뀐게 보일거임
     cv2.imwrite('./img/' + str(picture_number) + '_4.jpg', image)
 
+
+
     # reshape
     image = image.reshape((image.shape[0] * image.shape[1], 3)) # height, width 통합
+
+
 
     # k-means 색추출
     k = 2
     clt = KMeans(n_clusters = k)
     clt.fit(image)
+
+
 
     # clt.cluster_centers_
     # 여기에 추출한 rgb코드들이 array 형태로 저장 됨
@@ -240,9 +289,12 @@ for i in range(0,1):
     rgb_list = clt.cluster_centers_
 
 
+
     last_value = None
     overlap_count = 0
     flag = 0
+
+
 
     # 그래서 clt.cluster_centers_ 반복 돌아서
     # center에 첫 튠에 [r, g, b ] 다음 튠 [r, g, b ]  이렇게 들어갈거임
@@ -272,6 +324,8 @@ for i in range(0,1):
         for _ in range(overlap_count-1):
             del rgb_code_list[-1]
 
+
+
     # 여기는 추출한 rgb matplot으로 보여줌
     hist = centroid_histogram(clt)
     bar = plot_colors(hist, clt.cluster_centers_)
@@ -279,6 +333,8 @@ for i in range(0,1):
     plt.axis("off")
     # plt.imshow(bar)
     # plt.show()
+
+
 
     # 만약에 rgb 코드 추출 하나도 못하면
     if flag == 0:
@@ -292,82 +348,42 @@ for i in range(0,1):
         vbs_list.append(None)
         # black_rgb.append(None)
 
+
+
     # rgb 코드 추출 하면
     else:
         # rgb코드를 lab으로 바꿔주는 함수 통해서
         # lab_code에 변환한 값 넣어 줌
         lab_code.append(rgb2lab ( rgb_code_list[picture_number] ))
 
-        # 이거는 논문 참고해서 계절별 lab 코드
-        spring = [65.29, 13.71, 22.31]
-        summer = [66.11, 13.99, 19.33]
-        autumn = [60.02, 16.61, 26.18]
-        winter = [65.10, 14.55, 18.40]
-
-        # 계절별 lab코드
-        # Delta E 구하기 전 사전작업
-        spring = LabColor(lab_l=65.29, lab_a=13.71, lab_b=22.31)
-        summer = LabColor(lab_l=66.11, lab_a=13.99, lab_b=19.33)
-        autumn = LabColor(lab_l=60.02, lab_a=16.61, lab_b=26.18)
-        winter = LabColor(lab_l=65.10, lab_a=14.55, lab_b=18.40)
-
-
-        # 사용자 lab이랑 계절별 lab이랑의 delta E를 구해서 저장할 리스트 선언
-        color_delta_e = []
-
-        # 똑같이 사용자 lab코드 Delta E 구하기 전 사전작업
-        skin_rgb = LabColor(lab_l=lab_code[picture_number][0], lab_a=lab_code[picture_number][1], lab_b=lab_code[picture_number][2])
-        print('labcode=', lab_code[picture_number][0], lab_code[picture_number][1], lab_code[picture_number][2])
-
-        # 거리 구해라 뿅
-        color_delta_e.append(delta_e_cie1976(skin_rgb, spring))
-        color_delta_e.append(delta_e_cie1976(skin_rgb, summer))
-        color_delta_e.append(delta_e_cie1976(skin_rgb, autumn))
-        color_delta_e.append(delta_e_cie1976(skin_rgb, winter))
-
-        print(color_delta_e)
-        # your_tone 변수에 거리 제일 짧은거 인덱스 넣어줘
-        your_tone = color_delta_e.index(min(color_delta_e))
-
-
-        # 그래서 가장 짧은 인덱스가 뭥지 확인해서
-        # 어떤 계절의 톤인지 skin_tone_list에 저장
-        if your_tone == 0:
-            print("너는 봄 톤")
-            skin_tone_list.append("Spring")
-        elif your_tone == 1:
-            print("너는 여름 톤")
-            skin_tone_list.append("Summer")
-        elif your_tone == 2:
-            print("너는 가을 톤")
-            skin_tone_list.append("Autumn")
-        elif your_tone == 3:
-            print("너는 겨울 톤")
-            skin_tone_list.append("Winter")
-
 
         # rgb_code_list가 array로 저장되어 있어서 한번 뺴줘야 됨
         # 해당 picture_number꺼 array 빼서 list형태로 rgb에 저장
         rgb = rgb_code_list[picture_number]
 
+
         # list 형태로 뺸 rgb를 real_rgb_code_list에 저장
         real_rgb_code_list.append(rgb)
 
+
         # 함수 이용해서 rgb -> hsv 로 변환
         hsv_list.append(colorsys.rgb_to_hsv(rgb[0]/255, rgb[1]/255, rgb[2]/255))
+
 
         # vbs 저장
         # v : Lab의 L / b : Lab의 b / s : hsv의 s
         vbs_list.append([lab_code[picture_number][0], lab_code[picture_number][2], hsv_list[picture_number][1]])
 
+
         # 이건 논문에서 50몇명을 대상으로 뽑은 중앙값
         # vbs_zero_point
         vbs_zero_point = [65.1587, 17.6091, 0.3487762]
 
+
         # 논문에 있는 분류 방법
         if lab_code[picture_number][0] > vbs_zero_point[0] and lab_code[picture_number][2] > vbs_zero_point[1] and \
                 hsv_list[picture_number][1] > vbs_zero_point[2]:
-            vbs_skin_tone.append("따뜻한 봄 톤")
+            vbs_skin_tone.append("Sprint warm bright")
         elif lab_code[picture_number][0] > vbs_zero_point[0] and lab_code[picture_number][2] > vbs_zero_point[1] and \
                 hsv_list[picture_number][1] < vbs_zero_point[2]:
             vbs_skin_tone.append("Spring warm light")
@@ -391,165 +407,36 @@ for i in range(0,1):
             vbs_skin_tone.append("Winter cool bright")
         else:
             vbs_skin_tone.append("None")
+        print(vbs_skin_tone[0])
 
 
+    # DB 연결하기
+    db = pymysql.connect(host="127.0.0.1", user="root", password="1234", db="condb", charset="utf8")
 
-        # test_2.csv에 실시간 작성 코드
-        wr.writerow([picture_number, real_rgb_code_list[picture_number][0], real_rgb_code_list[picture_number][1], real_rgb_code_list[picture_number][2],
-                     lab_code[picture_number][0], lab_code[picture_number][1], lab_code[picture_number][2], hsv_list[picture_number][0], hsv_list[picture_number][1], hsv_list[picture_number][0],
-                     lab_code[picture_number][0], lab_code[picture_number][2], hsv_list[picture_number][1], skin_tone_list[picture_number], vbs_skin_tone[picture_number]])
+    # DB 커서 만들기
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    sql = "SELECT * FROM condb.cosmetics_rgb;"
+    cursor.execute(sql)
+    table = []
+    result = cursor.fetchall()
+    for record in result:
+        table.append(list(record.values()))
+    db.close()
 
-        # 리스트 별 길이 확인
-        # print(len(picture_number_list))
-        # print(len(real_rgb_code_list))
-        # print(len(lab_code))
-        # print(len(hsv_list))
-        # print(len(skin_tone_list))
-        # print(len(vbs_skin_tone))
-        # print(len(black_rgb))
+    print(table)
+    print(len(table))
+    delta_e_list = []
+    cosmetics_lab_list = []
+    skin_rgb = LabColor(lab_l=lab_code[picture_number][0], lab_a=lab_code[picture_number][1], lab_b=lab_code[picture_number][2])
+    for i in range(len(table)):
+        cosmetics_lab_list.append(LabColor(lab_l=table[i][5], lab_a=table[i][5], lab_b=table[i][5]))
+        delta_e_list.append(delta_e_cie1976(skin_rgb, cosmetics_lab_list[i]))
+        table[i].append(delta_e_cie1976(skin_rgb, cosmetics_lab_list[i]))
 
-# 지금 rgb, lab, hsv 전부 다 (00, 00 ,00) 이렇게 저장되어 있어서 하나씩 빼줘야 됨
-rgb_r_list, rgb_g_list, rgb_b_list, lab_l_list, lab_a_list, lab_b_list, hsv_h_list, hsv_s_list, hsv_v_list, black_r, black_g, black_b= [],[],[],[],[],[],[],[],[], [], [] ,[]
-
-# # black은 걍 무시
-# # for color_code in black_rgb:
-# #     if color_code is None:
-# #         black_r.append(None)
-# #         black_g.append(None)
-# #         black_b.append(None)
-# #     else:
-# #         black_r.append(color_code)
-# #         black_g.append(color_code)
-# #         black_b.append(color_code)
-
-# rgb -> r, g, b 추출
-for color_code in real_rgb_code_list:
-    if color_code is None:
-        rgb_r_list.append(None)
-        rgb_g_list.append(None)
-        rgb_b_list.append(None)
-    else:
-        rgb_r_list.append(color_code[0])
-        rgb_g_list.append(color_code[1])
-        rgb_b_list.append(color_code[2])
-
-# lab -> l, a, b 추출
-for color_code in lab_code:
-    if color_code is None:
-        lab_l_list.append(None)
-        lab_a_list.append(None)
-        lab_b_list.append(None)
-    else:
-        lab_l_list.append(color_code[0])
-        lab_a_list.append(color_code[1])
-        lab_b_list.append(color_code[2])
-
-# hsv -> h, s, v 추출
-for color_code in hsv_list:
-    if color_code is None:
-        hsv_h_list.append(None)
-        hsv_s_list.append(None)
-        hsv_v_list.append(None)
-    else:
-        hsv_h_list.append(color_code[0])
-        hsv_s_list.append(color_code[1])
-        hsv_v_list.append(color_code[2])
+    table.sort(key=lambda x:x[8])
+    del table[5:]
+    # for i in table:
+    #     print(i)
+    return table, vbs_skin_tone[0]
 
 
-# print(len(rgb_r_list))
-# print(len(rgb_g_list))
-# print(len(rgb_b_list))
-# print(len(lab_l_list))
-# print(len(lab_a_list))
-# print(len(lab_b_list))
-# print(len(hsv_h_list))
-# print(len(hsv_s_list))
-# print(len(hsv_v_list))
-# print(len(skin_tone_list))
-# print(len(vbs_skin_tone))
-
-
-# test.csv 에 저장
-df = pd.DataFrame({
-    "Picture_number" : picture_number_list,
-    "rgb_r" : rgb_r_list,
-    "rgb_g" : rgb_g_list,
-    "rgb_b" : rgb_b_list,
-    "lab_l" : lab_l_list,
-    "lab_a" : lab_a_list,
-    "lab_b" : lab_b_list,
-    "hsv_h" : hsv_h_list,
-    "hsv_s" : hsv_s_list,
-    "hsv_v" : hsv_v_list,
-    "vbs_v" : lab_l_list,
-    "vbs_b" : lab_b_list,
-    "vbs_s" : hsv_s_list,
-    "skin_tone" : skin_tone_list,
-    "vbs_skin_tone" : vbs_skin_tone,
-})
-
-print()
-print()
-print()
-print()
-print()
-print()
-print()
-print()
-print()
-print()
-print()
-print()
-
-# print(df)
-# df.to_csv('./test.csv', sep=',', na_rep='NaN')
-
-# print("your tone is " + vbs_skin_tone[0])
-# print("1st | ", "라끌랑 | ", "슈퍼쉴드 옴므쿠션 | ", "2호 | ", "39,000 | ", "delta_e : 5.767586131129729")
-# print("2st | ", "라끌랑 | ", "슈퍼쉴드 옴므쿠션 | ", "3호 | ", "39,000 | ", "delta_e : 5.94556202389648")
-# print("3st | ", "랑콤 | ", "똉 이돌 롱라스팅 파운데이션 | ", "P0-02 | ", "79,000 | ", "delta_e : 7.3462673365458135")
-# print("4st | ", "랑콤 | ", "똉 이돌 롱라스팅 파운데이션 | ", "BO-O3 | ", "79,000 | ", "delta_e : 11.52433762868825")
-# print("5st | ", "헤라 | ", "실키 스테이 24H 롱웨이 파운데이션 | ", "27N1 | ", "68,000 | ", "delta_e : 13.378566207931256")
-
-# DB 연결하기
-db = pymysql.connect(host="127.0.0.1", user="root", password="1234", db="condb", charset="utf8")
-
-# DB 커서 만들기
-cursor = db.cursor(pymysql.cursors.DictCursor)
-sql = "SELECT * FROM condb.cosmetics_rgb;"
-cursor.execute(sql)
-table = []
-result = cursor.fetchall()
-for record in result:
-    table.append(list(record.values()))
-db.close()
-
-print(table)
-print(len(table))
-delta_e_list = []
-cosmetics_lab_list = []
-for i in range(len(table)):
-    cosmetics_lab_list.append(LabColor(lab_l=table[i][5], lab_a=table[i][5], lab_b=table[i][5]))
-    delta_e_list.append(delta_e_cie1976(skin_rgb, cosmetics_lab_list[i]))
-    table[i].append(delta_e_cie1976(skin_rgb, cosmetics_lab_list[i]))
-
-table.sort(key=lambda x:x[8])
-del table[5:]
-for i in table:
-    print(i)
-
-
-# 5, 6, 7
-
-
-# print(rgb_list)
-# hist = centroid_histogram(clt)
-# bar = plot_colors(hist, clt.cluster_centers_)
-# plt.figure()
-# plt.axis("off")
-# plt.imshow(bar)
-# plt.show()
-#
-# cv2.imshow("Face Landmark", skin)
-# # cv2.imshow("Face Landmark", img)
-# cv2.waitKey(0)
